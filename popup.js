@@ -44,6 +44,8 @@ async function captureFromCMC() {
   lastPayload = resp.data;
 
   // Render
+  canvas.width = 1080;
+canvas.height = 1400; // was 1080
   renderMarketImage(canvas, lastPayload, getOptions());
   btnDownload.disabled = false;
 
