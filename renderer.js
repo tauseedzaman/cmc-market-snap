@@ -1,9 +1,9 @@
 // 1) Manual ignore (you can extend anytime)
 const DEFAULT_IGNORE_SYMBOLS = new Set([
-    "USDT","USDC","DAI","TUSD","FDUSD","USDE","BUSD","PYUSD","FRAX","LUSD",
-    "USDP","GUSD","SUSD","USDD","EURT","EURS","XAUT","CMC20"
-  ]);
-  
+    "USDT", "USDC", "DAI", "TUSD", "FDUSD", "USDE", "BUSD", "PYUSD", "FRAX", "LUSD",
+    "USDP", "GUSD", "SUSD", "USDD", "EURT", "EURS", "XAUT", "CMC20"
+]);
+
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
     const rr = Math.min(r, w / 2, h / 2);
@@ -27,6 +27,11 @@ function drawText(ctx, text, x, y, size, color, weight = 700, align = "left") {
 function isNegative(str) {
     return typeof str === "string" && str.trim().startsWith("-");
 }
+function changeColor(v) {
+    if (v == null || v === "—") return "rgba(232,240,255,0.68)";
+    return isNegative(v) ? "#ff6b6b" : "#5CFFB1";
+}
+
 function parsePct(v) {
     if (!v) return null;
     const m = String(v).match(/-?\d+(\.\d+)?/);
@@ -53,44 +58,44 @@ function topMovers(coins, dir = "up", limit = 3) {
 }
 
 
-  // 2) Heuristic stablecoin detection (symbol + name)
-  function isStableLike(coin) {
+// 2) Heuristic stablecoin detection (symbol + name)
+function isStableLike(coin) {
     const s = String(coin?.symbol || "").toUpperCase();
     const n = String(coin?.name || "").toLowerCase();
-  
+
     // common stable symbols / patterns
     if (DEFAULT_IGNORE_SYMBOLS.has(s)) return true;
-  
+
     // catches lots of stablecoin tickers: USDT, USDC, FDUSD, USDe, etc
     if (/^(USD|USDT|USDC|DAI|TUSD|FDUSD|USDE|PYUSD|FRAX|LUSD|GUSD|USDP|SUSD|USDD)/.test(s)) return true;
-  
+
     // name-based
     if (n.includes("usd") && (n.includes("tether") || n.includes("coin") || n.includes("stable"))) return true;
     if (n.includes("stablecoin")) return true;
-  
+
     // gold stables (optional)
     if (s === "XAUT" || n.includes("tether gold")) return true;
-  
+
     return false;
-  }
-  
-  // combine: manual ignore + stable filter
-  function buildIgnoreSet(customList = []) {
+}
+
+// combine: manual ignore + stable filter
+function buildIgnoreSet(customList = []) {
     const set = new Set(DEFAULT_IGNORE_SYMBOLS);
     customList.forEach(x => set.add(String(x).toUpperCase().trim()));
     return set;
-  }
-  
-  function filterCoins(list, { ignoreSet, ignoreStables = true } = {}) {
+}
+
+function filterCoins(list, { ignoreSet, ignoreStables = true } = {}) {
     const arr = Array.isArray(list) ? list : [];
     return arr.filter(c => {
-      const sym = String(c?.symbol || "").toUpperCase().trim();
-      if (ignoreSet?.has(sym)) return false;
-      if (ignoreStables && isStableLike(c)) return false;
-      return true;
+        const sym = String(c?.symbol || "").toUpperCase().trim();
+        if (ignoreSet?.has(sym)) return false;
+        if (ignoreStables && isStableLike(c)) return false;
+        return true;
     });
-  }
-  
+}
+
 function drawTextEllipsis(ctx, text, x, y, maxW, size, color, weight = 800, align = "left") {
     ctx.fillStyle = color;
     ctx.font = `${weight} ${size}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
@@ -193,46 +198,47 @@ function renderMarketImage(canvas, payload, options) {
     const hx = panelX + 30;
     const hy = panelY + 78;
     drawText(ctx, "Asset", hx, hy, 20, muted, 800);
-    drawText(ctx, "Price", hx + 580, hy, 20, muted, 800, "right");
-    drawText(ctx, "24h", hx + 820, hy, 20, muted, 800, "right");
-    drawText(ctx, "7d", hx + 940, hy, 20, muted, 800, "right");
+    drawText(ctx, "Price", hx + 250, hy, 20, muted, 800, "right");
+    drawText(ctx, "1h", hx + 330, hy, 20, muted, 800, "right");
+    drawText(ctx, "24h", hx + 420, hy, 20, muted, 800, "right");
+    drawText(ctx, "7d", hx + 540, hy, 20, muted, 800, "right");
 
     // rows
-    const coins = Array.isArray(payload.coins) ? payload.coins : [];
+    // const coins = Array.isArray(payload.coins) ? payload.coins : [];
+    const ignoreSet = buildIgnoreSet(payload.ignoreSymbols || []);
+
     const rowY0 = hy + 46;
     const rowH = 78;
 
-    for (let i = 0; i < Math.min(coins.length, 7); i++) {
+    const coins = filterCoins(payload.coins, { ignoreSet, ignoreStables: true });
+
+    for (let i = 0; i < Math.min(coins.length, 6); i++) {
         const c = coins[i];
         const y = rowY0 + i * rowH;
 
-        // divider
-        ctx.strokeStyle = "rgba(255,255,255,0.06)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(panelX + 24, y - 14);
-        ctx.lineTo(panelX + panelW - 24, y - 14);
-        ctx.stroke();
+        const asset = `${c.symbol ? c.symbol : "-"}`;
 
-        const asset = `${c.name || "—"}${c.symbol ? "  (" + c.symbol + ")" : ""}`;
-        //   drawText(ctx, asset, hx, y, 26, text, 900);
-        const colAssetW = 360; // adjust as needed
+        // Asset: ellipsis to avoid overlap
+        const colAssetW = 360;
         drawTextEllipsis(ctx, asset, hx, y, colAssetW, 26, text, 900);
-        drawText(ctx, c.price || "—", hx + 580, y + 2, 24, text, 800, "right");
 
-        const c24 = c.change24h || "—";
-        const c7 = c.change7d || "—";
+        // Price right-aligned
+        drawText(ctx, c.price || "—", hx + 250, y + 2, 24, text, 800, "right");
 
-        // drawText(ctx, c24, hx + 700, y + 2, 24, isNegative(c24) ? "#ff6b6b" : "#5CFFB1", 900);
-        // drawText(ctx, c7, hx + 860, y + 2, 24, isNegative(c7) ? "#ff6b6b" : "#5CFFB1", 900);
+        // Changes (string expected like "0.44%" or "-1.02%")
+        const c1h = c.change1h || "—";
+        const c24h = c.change24h || "—";
+        const c7d = c.change7d || "—";
 
-
-        drawText(ctx, c24, hx + 820, y + 2, 24, isNegative(c24) ? "#ff6b6b" : "#5CFFB1", 900, "right");
-        drawText(ctx, c7, hx + 940, y + 2, 24, isNegative(c7) ? "#ff6b6b" : "#5CFFB1", 900, "right");
-
+        drawText(ctx, c1h, hx + 330, y + 2, 24, changeColor(c1h), 900, "right");
+        drawText(ctx, c24h, hx + 460, y + 2, 24, changeColor(c24h), 900, "right");
+        drawText(ctx, c7d, hx + 580, y + 2, 24, changeColor(c7d), 900, "right");
     }
 
+
     // ===== Movers Panel =====
+    const movers = filterCoins(payload.movers, { ignoreSet, ignoreStables: true });
+
     const gainers = topMovers(payload.coins || [], "up", 3);
     const losers = topMovers(payload.coins || [], "down", 3);
 
