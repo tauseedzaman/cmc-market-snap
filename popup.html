@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CMC Market Snap</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="title">CMC Market Snap</div>
+      <div class="subtitle">Create a market update image</div>
+    </header>
+
+    <section class="controls">
+      <label class="row">
+        <span>Watermark</span>
+        <input id="watermark" placeholder="@YourHandle" />
+      </label>
+
+      <label class="row">
+        <span>Accent</span>
+        <input id="accent" type="color" value="#ec6714" />
+      </label>
+
+      <label class="row">
+        <span>Headline</span>
+        <input id="headline" placeholder="Crypto Market Update" />
+      </label>
+
+      <div class="buttons">
+        <button id="btnCapture">Capture from CMC</button>
+        <button id="btnDownload" disabled>Download PNG</button>
+      </div>
+    </section>
+
+    <section class="previewWrap">
+      <canvas id="preview" width="1080" height="1080"></canvas>
+      <div id="status" class="status">Open coinmarketcap.com first.</div>
+    </section>
+
+    <script src="renderer.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
